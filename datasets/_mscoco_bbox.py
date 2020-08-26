@@ -70,7 +70,7 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         img, anno = super(Dataset, self).__getitem__(idx)
         anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
         anno = [obj for obj in anno if obj['area'] > 0]
-        anno = [obj for obj in anno if all(o > 2 for o in obj['bbox'][2:])]
+        anno = [obj for obj in anno if all(o > box_size_th for o in obj['bbox'][2:])]
         anno = [obj for obj in anno if obj['category_id'] in self.coco_to_index]
         boxes = [obj['bbox'] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
