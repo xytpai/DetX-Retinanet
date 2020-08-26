@@ -9,18 +9,12 @@ import random
 warnings.filterwarnings("ignore")
 
 
-box_size_th = 3
-def has_valid_annotation(anno, class_id_set):
-    if len(anno) == 0:
-        return False
-    if all(
-        any(o <= box_size_th for o in obj['bbox'][2:]) \
-        or (obj['category_id'] not in class_id_set) \
-        or (obj['iscrowd'] != 0) \
-        or (obj['area'] <= 0) \
-            for obj in anno):
-        return False
-    return True
+def filter_annotation(anno, class_id_set):
+    anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
+    anno = [obj for obj in anno if obj['area'] > 0]
+    anno = [obj for obj in anno if all(o > 3 for o in obj['bbox'][2:])]
+    anno = [obj for obj in anno if obj['category_id'] in class_id_set]
+    return anno
 
 
 def x_flip(img, boxes=None, masks=None):

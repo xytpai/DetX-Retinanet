@@ -52,7 +52,7 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         for img_id in self.ids:
             ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
             anno = self.coco.loadAnns(ann_ids)
-            if has_valid_annotation(anno, self.coco_to_index):
+            if len(filter_annotation(anno, self.coco_to_index))>0:
                 ids.append(img_id)
         self.ids = ids
         
@@ -68,10 +68,7 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         labels:   L(n)
         '''
         img, anno = super(Dataset, self).__getitem__(idx)
-        anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
-        anno = [obj for obj in anno if obj['area'] > 0]
-        anno = [obj for obj in anno if all(o > box_size_th for o in obj['bbox'][2:])]
-        anno = [obj for obj in anno if obj['category_id'] in self.coco_to_index]
+        anno = filter_annotation(anno, self.coco_to_index)
         boxes = [obj['bbox'] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         xmin_ymin, w_h = boxes.split([2, 2], dim=1)
