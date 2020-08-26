@@ -1,0 +1,49 @@
+DATASET:
+  NAME: "mscoco_bbox"
+  ROOT_TRAIN: "/home1/xyt/dataset/coco17/images"
+  ROOT_EVAL: "/home1/xyt/dataset/coco17/images"
+  ROOT_TEST: "demo_images"
+  JSON_TRAIN: "/home1/xyt/dataset/coco17/annotations/instances_train2017.json"
+  JSON_EVAL: "/home1/xyt/dataset/coco17/annotations/instances_val2017.json"
+  JSON_TEST: "/home1/xyt/dataset/coco17/annotations/instances_val2017.json"
+
+DETECTOR:
+  NAME: "retinanet_res"
+  DEPTH: 50
+  NUM_CLASS: 80
+
+EVAL:
+  NMS_TOPK_P: 1000
+  NMS_TH: 0.05
+  NMS_IOU: 0.5
+  SIZE: 1025
+  DEVICE: 0
+
+TEST:
+  NMS_TOPK_P: 1000
+  NMS_TH: 0.5
+  NMS_IOU: 0.5
+  SIZE: 1025
+  DEVICE: 0
+
+TRAIN:
+  LOAD: False
+  SAVE: True
+  PRETRAINED: True
+  FREEZE_BN: True
+  FREEZE_STAGES: 1
+  SIZE: 1025
+  TRANSFER_P: 0.5
+  TRANSFER_MIN: 1.0
+  NUM_EPOCH: 12
+  DEVICES: [0,1,2,3,4,5,6,7]
+  BATCH_SIZE: 16
+  NUM_WORKERS: 16
+  LR_BASE: 0.01
+  LR_GAMMA: 0.1
+  LR_SCHEDULE: [60000, 80000]
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  GRAD_CLIP: 10
+  WARMUP_ITER: 500
+  SEED: 0
