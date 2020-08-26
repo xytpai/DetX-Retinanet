@@ -85,7 +85,7 @@ def conv_with_kaiming_uniform(use_gn=False, use_relu=False):
     def make_conv(
         in_channels, out_channels, kernel_size, stride=1, dilation=1
     ):
-        conv = Conv2d(
+        conv = nn.Conv2d(
             in_channels, 
             out_channels, 
             kernel_size=kernel_size, 

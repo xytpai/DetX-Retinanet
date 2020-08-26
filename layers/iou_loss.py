@@ -17,4 +17,4 @@ class IOULoss(nn.Module):
         area1 = (bboxes1[:, 2] - bboxes1[:, 0] + 1) * (bboxes1[:, 3] - bboxes1[:, 1] + 1)
         area2 = (bboxes2[:, 2] - bboxes2[:, 0] + 1) * (bboxes2[:, 3] - bboxes2[:, 1] + 1)
         ious = (overlap + 1.0) / (area1 + area2 - overlap + 1.0)
-        return -ious.log()
+        return (-ious.log()).sum()

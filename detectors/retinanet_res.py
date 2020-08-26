@@ -107,8 +107,7 @@ class Detector(nn.Module):
             label_cls_selected[m_neg[m_negpos]] = 0 # L(n+-)
             pred_reg_selected = pred_reg[b][m_pos] # F(n+, 4)
             label_reg_selected = label_reg_b[iou_max_idx[m_pos]]
-            loss_cls = self.sigmoid_focal_loss(pred_cls_selected, 
-                            label_cls_selected, 2.0, 0.25).view(1)
+            loss_cls = self.sigmoid_focal_loss(pred_cls_selected, label_cls_selected).view(1)
             loss_reg = self.iou_loss(pred_reg_selected, label_reg_selected).view(1)
             loss.append((loss_cls+loss_reg)/num_pos)
         return torch.cat(loss)

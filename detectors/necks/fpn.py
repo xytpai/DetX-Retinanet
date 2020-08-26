@@ -20,9 +20,8 @@ class FPN(nn.Module):
         for idx, in_channels in enumerate(in_channels):
             inner_block = "fpn_inner{}".format(idx) # fpn_inner0, fpn_inner1, ...
             layer_block = "fpn_layer{}".format(idx)
-            inner_block_module = Conv2d(in_channels, out_channels, kernel_size=1)
-            layer_block_module = Conv2d(out_channels, out_channels, 
-                                            kernel_size=3, padding=1)
+            inner_block_module = Conv2d(in_channels, out_channel, kernel_size=1)
+            layer_block_module = Conv2d(out_channel, out_channel, kernel_size=3)
             self.add_module(inner_block, inner_block_module)
             self.add_module(layer_block, layer_block_module)
             self.inner_blocks.append(inner_block)
