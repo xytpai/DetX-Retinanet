@@ -51,6 +51,8 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         self.ids = sorted(self.ids)
         ids = []
         for img_id in self.ids:
+            img_info = self.coco.loadImgs(img_id)[0]
+            if min(img_info['width'], img_info['height']) < 32: continue
             ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
             anno = self.coco.loadAnns(ann_ids)
             if len(filter_annotation(anno, self.coco_to_index))>0:
