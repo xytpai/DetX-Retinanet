@@ -1,12 +1,7 @@
 import torch
 import torch.nn as nn 
 import torch.nn.functional as F
-import imp 
-try:
-    imp.find_module('nms_cuda')
-    import nms_cuda
-except ImportError:
-    print('cannot find nms_cuda')
+import nms_cuda
 
 
 def box_nms(bboxes, scores, threshold=0.5):

@@ -3,12 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
-import imp
-try: 
-    imp.find_module('sigmoid_focal_loss_cuda')
-    import sigmoid_focal_loss_cuda
-except ImportError:
-    print('cannot find sigmoid_focal_loss_cuda')
+import sigmoid_focal_loss_cuda
 
 
 class _sigmoid_focal_loss(Function):
