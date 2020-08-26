@@ -73,15 +73,15 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
         anno = [obj for obj in anno if obj['area'] > 0]
         anno = [obj for obj in anno if all(o > 2 for o in obj['bbox'][2:])]
-        boxes = [obj["bbox"] for obj in anno]
+        anno = [obj for obj in anno if obj['category_id'] in self.coco_to_index]
+        boxes = [obj['bbox'] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         xmin_ymin, w_h = boxes.split([2, 2], dim=1)
         xmax_ymax = xmin_ymin + w_h - 1
         xmin, ymin = xmin_ymin.split([1, 1], dim=1)
         xmax, ymax = xmax_ymax.split([1, 1], dim=1)
         boxes = torch.cat([ymin, xmin, ymax, xmax], dim=1)
-        labels = [obj["category_id"] for obj in anno]
-        labels = [self.coco_to_index[c] for c in labels]
+        labels = [self.coco_to_index[obj['category_id']] for obj in anno]
         labels = torch.LongTensor(labels)
         masks = [self.coco.annToMask(obj) for obj in anno]
         masks = np.stack(masks)
