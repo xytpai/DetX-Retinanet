@@ -37,15 +37,6 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         # other
         self.task = 'bbox'
         self.normalizer = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))
-        # filter self.ids
-        self.ids = sorted(self.ids)
-        ids = []
-        for img_id in self.ids:
-            ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
-            anno = self.coco.loadAnns(ann_ids)
-            if has_valid_annotation(anno):
-                ids.append(img_id)
-        self.ids = ids
         # name_table
         self.index_to_coco = [i for i in range(len(self.name_table))]
         self.coco_to_index = {}
@@ -55,6 +46,15 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
                 index = self.name_table.index(name)
                 self.index_to_coco[index] = cate['id']
                 self.coco_to_index[cate['id']] = index
+        # filter self.ids
+        self.ids = sorted(self.ids)
+        ids = []
+        for img_id in self.ids:
+            ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
+            anno = self.coco.loadAnns(ann_ids)
+            if has_valid_annotation(anno, self.coco_to_index):
+                ids.append(img_id)
+        self.ids = ids
         
     def __len__(self):
         return len(self.ids)

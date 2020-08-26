@@ -9,10 +9,15 @@ import random
 warnings.filterwarnings("ignore")
 
 
-def has_valid_annotation(anno):
+def has_valid_annotation(anno, class_id_set):
     if len(anno) == 0:
         return False
-    if all(any(o <= 1 for o in obj["bbox"][2:]) for obj in anno):
+    if all(
+        any(o <= 2 for o in obj['bbox'][2:]) \
+        or (obj['category_id'] not in class_id_set) \
+        or (obj['iscrowd'] != 0) \
+        or (obj['area'] <= 0) \
+            for obj in anno):
         return False
     return True
 
