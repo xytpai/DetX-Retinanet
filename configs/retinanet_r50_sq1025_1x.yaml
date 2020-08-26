@@ -8,7 +8,7 @@ DATASET:
   JSON_TEST: "/home1/xyt/dataset/coco17/annotations/instances_val2017.json"
 
 DETECTOR:
-  NAME: "retinanet_res"
+  NAME: "_retinanet_res"
   DEPTH: 50
   NUM_CLASS: 80
 
