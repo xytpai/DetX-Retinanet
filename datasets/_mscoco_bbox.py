@@ -68,7 +68,9 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         labels:   L(n)
         '''
         img, anno = super(Dataset, self).__getitem__(idx)
-        anno = [obj for obj in anno if obj["iscrowd"] == 0] # filter crowd annotations
+        anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
+        anno = [obj for obj in anno if obj['area'] > 0]
+        anno = [obj for obj in anno if all(o > 2 for o in obj['bbox'][2:])]
         boxes = [obj["bbox"] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         xmin_ymin, w_h = boxes.split([2, 2], dim=1)
