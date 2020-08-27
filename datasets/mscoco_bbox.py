@@ -1,19 +1,14 @@
 import torch
-import torch.nn.functional as F
-import numpy as np 
-import os, math, random
-from PIL import Image
-import torch.utils.data as data
+import torchvision
 import torchvision.transforms as transforms
-from pycocotools.coco import COCO
-import cv2
+import random
 if __name__ != '__main__':
     from datasets.utils import *
 else:
     from utils import *
 
 
-class Dataset(data.Dataset):
+class Dataset(torchvision.datasets.coco.CocoDetection):
     name_table = ['background', 
                'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
@@ -31,6 +26,7 @@ class Dataset(data.Dataset):
                'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
     def __init__(self, root_img, file_json, size, normalize, transfer_p, transfer_min):
+        super(Dataset, self).__init__(root_img, file_json)
         assert size%2 == 1
         self.root_img = root_img
         self.file_json = file_json
@@ -41,8 +37,7 @@ class Dataset(data.Dataset):
         # other
         self.task = 'bbox'
         self.normalizer = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))
-        # get coco
-        self.coco = COCO(file_json)
+        # name_table
         self.index_to_coco = [i for i in range(len(self.name_table))]
         self.coco_to_index = {}
         for cate in self.coco.loadCats(self.coco.getCatIds()):
@@ -51,25 +46,17 @@ class Dataset(data.Dataset):
                 index = self.name_table.index(name)
                 self.index_to_coco[index] = cate['id']
                 self.coco_to_index[cate['id']] = index
-        # filter imgs
-        self.ids = [] # [xxxx, xxxx, ...]
-        for image_id in self.coco.getImgIds():
-            img_info = self.coco.loadImgs(image_id)[0]
-            if min(img_info['width'], img_info['height']) < 32:
-                continue
-            anns = self.coco.loadAnns(self.coco.getAnnIds(imgIds=image_id, iscrowd=False))
-            if len(anns) == 0:
-                continue
-            ena = False
-            for ann in anns:
-                if ann['category_id'] not in self.coco_to_index:
-                    continue
-                xmin, ymin, w, h = ann['bbox']
-                if w < 1 or h < 1: 
-                    continue
-                ena = True
-                break
-            if ena: self.ids.append(image_id)
+        # filter self.ids
+        ids = []
+        for img_id in self.ids:
+            img_info = self.coco.loadImgs(img_id)[0]
+            height, width = img_info['height'], img_info['width']
+            if min(height, width) < 32: continue
+            ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
+            anno = self.coco.loadAnns(ann_ids)
+            if len(filter_annotation(anno, self.coco_to_index, height, width))>0:
+                ids.append(img_id)
+        self.ids = ids
         
     def __len__(self):
         return len(self.ids)
@@ -82,44 +69,27 @@ class Dataset(data.Dataset):
         boxes:    F(n, 4)
         labels:   L(n)
         '''
-        img_info = self.coco.loadImgs(self.ids[idx])[0]
-        img_name = img_info['file_name']
-        img = Image.open(os.path.join(self.root_img, img_name))
-        if img.mode != 'RGB': 
-            img = img.convert('RGB')
-        boxes, labels = [], []
-        anns = self.coco.loadAnns(self.coco.getAnnIds(imgIds=self.ids[idx], 
-                                    iscrowd=False)) # keep iscrowd False
-        for i, ann in enumerate(anns):
-            if ann.get('ignore', False): continue
-            xmin, ymin, w, h = ann['bbox']
-            inter_w = max(0, min(xmin + w, img_info['width']) - max(xmin, 0))
-            inter_h = max(0, min(ymin + h, img_info['height']) - max(ymin, 0))
-            if inter_w * inter_h == 0: continue
-            if ann['area'] <= 0 or w < 1 or h < 1: continue
-            coco_id = ann['category_id']
-            if coco_id not in self.coco_to_index: continue
-            label = self.coco_to_index[coco_id]
-            xmax, ymax = xmin + w - 1, ymin + h - 1
-            boxes.append(torch.FloatTensor([ymin, xmin, ymax, xmax]))
-            labels.append(torch.LongTensor([label]))
-        if len(labels) > 0:
-            boxes = torch.stack(boxes)
-            labels = torch.cat(labels)
-        else: # only bg
-            boxes = torch.zeros(1, 4)
-            labels = torch.zeros(1)
+        img, anno = super(Dataset, self).__getitem__(idx)
+        anno = filter_annotation(anno, self.coco_to_index, img.size[1], img.size[0])
+        boxes = [obj['bbox'] for obj in anno]
+        boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
+        xmin_ymin, w_h = boxes.split([2, 2], dim=1)
+        xmax_ymax = xmin_ymin + w_h - 1
+        xmin, ymin = xmin_ymin.split([1, 1], dim=1)
+        xmax, ymax = xmax_ymax.split([1, 1], dim=1)
+        boxes = torch.cat([ymin, xmin, ymax, xmax], dim=1)
+        labels = [self.coco_to_index[obj['category_id']] for obj in anno]
+        labels = torch.LongTensor(labels)
+        # clamp
         boxes[:, :2].clamp_(min=0)
         boxes[:, 2].clamp_(max=float(img.size[1])-1)
         boxes[:, 3].clamp_(max=float(img.size[0])-1)
-        if random.random() < 0.5: 
-            img, boxes, _ = x_flip(img, boxes)
+        # transform
+        if random.random() < 0.5: img, boxes, _ = x_flip(img, boxes)
         img, location, boxes, _ = to_square(img, self.size, 
                                     self.transfer_p, self.transfer_min, boxes)
         img = transforms.ToTensor()(img)
-        # normalize
-        if self.normalize:
-            img = self.normalizer(img)
+        if self.normalize: img = self.normalizer(img)
         return img, location, boxes, labels
 
     def collate_fn(self, data):
