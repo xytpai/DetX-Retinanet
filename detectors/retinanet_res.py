@@ -84,13 +84,13 @@ class Detector(nn.Module):
             pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
             m_neg[pred_inds_to_update] = 0
             m_pos[pred_inds_to_update] = 1
-            # remove useless anchors
-            pred_acr_yx = (pred_acr[b][:, :2] + pred_acr[b][:, 2:4])/2.0
-            cd1 = pred_acr_yx - locations[b, :2]
-            cd2 = locations[b, 2:4] - pred_acr_yx
-            m_remove = (cd1.min(dim=1)[0] < 0) | (cd2.min(dim=1)[0] < 0)
-            m_neg[m_remove] = 0
-            m_pos[m_remove] = 0
+            # # remove useless anchors
+            # pred_acr_yx = (pred_acr[b][:, :2] + pred_acr[b][:, 2:4])/2.0
+            # cd1 = pred_acr_yx - locations[b, :2]
+            # cd2 = locations[b, 2:4] - pred_acr_yx
+            # m_remove = (cd1.min(dim=1)[0] < 0) | (cd2.min(dim=1)[0] < 0)
+            # m_neg[m_remove] = 0
+            # m_pos[m_remove] = 0
             # get loss
             num_pos = float(m_pos.sum().clamp(min=1))
             m_negpos = m_neg | m_pos # B(an)
