@@ -76,11 +76,11 @@ class Detector(nn.Module):
             # get loss
             iou = box_iou(pred_acr[b], label_reg_b)
             iou_max, iou_max_idx = torch.max(iou, dim=1) # F(an), L(an)
-            _iou_max_idx = torch.argmax(iou, dim=0) # F(n), L(n)
+            # _iou_max_idx = torch.argmax(iou, dim=0) # F(n), L(n)
             m_neg = iou_max <  self.iou_th[0] # B(an)
-            m_neg[_iou_max_idx] = 0
+            # m_neg[_iou_max_idx] = 0
             m_pos = iou_max >= self.iou_th[1] # B(an)
-            m_pos[_iou_max_idx] = 1
+            # m_pos[_iou_max_idx] = 1
             num_pos = float(m_pos.sum().clamp(min=1))
             m_negpos = m_neg | m_pos # B(an)
             pred_cls_selected = pred_cls[b][m_negpos] # F(n+-, num_class)
@@ -132,8 +132,8 @@ class Detector(nn.Module):
         # nms for each class
         _pred_cls_i, _pred_cls_p, _pred_reg = [], [], []
         for cls_id in range(1, self.num_class+1):
-            m = pred_cls_i == cls_id
-            if int(m.sum()) == 0: continue
+            m = (pred_cls_i == cls_id).nonzero().view(-1)
+            if m.shape[0] == 0: continue
             pred_cls_i_id = pred_cls_i[m]
             pred_cls_p_id = pred_cls_p[m]
             pred_reg_id = pred_reg[m]
