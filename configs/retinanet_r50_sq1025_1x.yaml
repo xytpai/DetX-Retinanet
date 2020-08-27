@@ -1,5 +1,5 @@
 DATASET:
-  NAME: "_mscoco_bbox"
+  NAME: "mscoco_bbox"
   ROOT_TRAIN: "/home1/xyt/dataset/coco17/images"
   ROOT_EVAL: "/home1/xyt/dataset/coco17/images"
   ROOT_TEST: "demo_images"
