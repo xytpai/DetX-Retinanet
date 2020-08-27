@@ -39,10 +39,10 @@ class Detector(nn.Module):
             [71.84, 35.92],
         ]))
         self.iou_th     = (0.4, 0.5)
-        self.classes    = self.cfg['DETECTOR']['NUM_CLASS']
+        self.num_class  = self.cfg['DETECTOR']['NUM_CLASS']
         self.backbone   = ResNet(self.cfg['DETECTOR']['DEPTH'])
         self.neck       = FPN(self.backbone.out_channels, 256)
-        self.head       = RetinaNetHead(256, self.classes, self.anchors.shape[0])
+        self.head       = RetinaNetHead(256, self.num_class, self.anchors.shape[0])
         if self.mode == 'TRAIN' and self.cfg['TRAIN']['PRETRAINED']:
             self.backbone.load_pretrained_params()
         # loss 
@@ -66,7 +66,7 @@ class Detector(nn.Module):
             cls_s, reg_s = self.head(feature)
             cls_s = cls_s.permute(0,2,3,1).contiguous()
             reg_s = reg_s.permute(0,2,3,1).contiguous()
-            cls_s = cls_s.view(batch_size, -1, self.classes)
+            cls_s = cls_s.view(batch_size, -1, self.num_class)
             reg_s = reg_s.view(batch_size, -1, 4)
             acr_s = anchor_scatter(self.anchors*(2**s), batch_size, h_s, w_s, stride) 
             # F(b, an, 4)
@@ -75,7 +75,7 @@ class Detector(nn.Module):
             pred_reg.append(reg_s)
             pred_acr.append(acr_s)
             layer_nums.append(h_s*w_s*self.anchors.shape[0])
-        pred_cls = torch.cat(pred_cls, dim=1) # F(b, an, classes)
+        pred_cls = torch.cat(pred_cls, dim=1) # F(b, an, num_class)
         pred_reg = torch.cat(pred_reg, dim=1) # F(b, an, 4) yxyx
         pred_acr = torch.cat(pred_acr, dim=1) # F(b, an, 4) yxyx
         if (label_cls is not None) and (label_reg is not None):
@@ -102,7 +102,7 @@ class Detector(nn.Module):
             m_pos[_iou_max_idx] = 1
             num_pos = float(m_pos.sum().clamp(min=1))
             m_negpos = m_neg | m_pos # B(an)
-            pred_cls_selected = pred_cls[b][m_negpos] # F(n+-, classes)
+            pred_cls_selected = pred_cls[b][m_negpos] # F(n+-, num_class)
             label_cls_selected = label_cls_b[iou_max_idx[m_negpos]]
             label_cls_selected[m_neg[m_negpos]] = 0 # L(n+-)
             pred_reg_selected = pred_reg[b][m_pos] # F(n+, 4)
