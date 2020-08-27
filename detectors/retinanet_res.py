@@ -8,19 +8,6 @@ from detectors.necks import *
 from detectors.heads import *
 
 
-def tlbr2yxyx_anchor_yxyx(reg, acr, factor=1.0):
-    '''
-    reg: F(..., 4)
-    acr: F(..., 4) yxyx
-    ->   F(..., 4)
-    '''
-    acr_hw = acr[..., 2:] - acr[..., :2] + 1
-    ctr_yx = (acr[..., :2] + acr[..., 2:])/2.0
-    ymin_xmin = ctr_yx + reg[..., :2]*acr_hw*factor
-    ymax_xmax = ctr_yx + reg[..., 2:]*acr_hw*factor
-    return torch.cat([ymin_xmin, ymax_xmax], dim=-1)
-
-
 class Detector(nn.Module):
     def __init__(self, cfg, mode='TEST'):
         super(Detector, self).__init__()
@@ -42,7 +29,8 @@ class Detector(nn.Module):
         self.num_class  = self.cfg['DETECTOR']['NUM_CLASS']
         self.backbone   = ResNet(self.cfg['DETECTOR']['DEPTH'])
         self.neck       = FPN(self.backbone.out_channels, 256)
-        self.head       = RetinaNetHead(256, self.num_class, self.anchors.shape[0])
+        self.head       = RetinaNetHead(256, self.num_class, 
+                                norm=1.0/8.0, num_anchors=self.anchors.shape[0])
         if self.mode == 'TRAIN' and self.cfg['TRAIN']['PRETRAINED']:
             self.backbone.load_pretrained_params()
         # loss 
@@ -62,15 +50,8 @@ class Detector(nn.Module):
         pred_cls, pred_reg, pred_acr = [], [], []
         for s, feature in enumerate(out):
             h_s, w_s = feature.shape[2], feature.shape[3]
-            stride = (im_h-1) // (h_s-1)
-            cls_s, reg_s = self.head(feature)
-            cls_s = cls_s.permute(0,2,3,1).contiguous()
-            reg_s = reg_s.permute(0,2,3,1).contiguous()
-            cls_s = cls_s.view(batch_size, -1, self.num_class)
-            reg_s = reg_s.view(batch_size, -1, 4)
-            acr_s = anchor_scatter(self.anchors*(2**s), batch_size, h_s, w_s, stride) 
+            cls_s, reg_s, acr_s = self.head(feature)
             # F(b, an, 4)
-            reg_s = tlbr2yxyx_anchor_yxyx(reg_s, acr_s)
             pred_cls.append(cls_s)
             pred_reg.append(reg_s)
             pred_acr.append(acr_s)

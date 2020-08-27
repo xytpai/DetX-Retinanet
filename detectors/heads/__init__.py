@@ -1,5 +1,5 @@
 import torch 
-from .retinanet import RetinaNetHead
+from .retina_head import RetinaNetHead
 
 __all__ = [
     'RetinaNetHead'
