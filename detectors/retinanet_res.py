@@ -148,5 +148,18 @@ class Detector(nn.Module):
         pred_reg[:, 1::2] -= float(locations[1])
         pred_reg[:, :2].clamp_(min=0)
         pred_reg = pred_reg/float(locations[4])
-        keep = box_nms(pred_reg, pred_cls_p, self.cfg[self.mode]['NMS_IOU'])
-        return pred_cls_i[keep], pred_cls_p[keep], pred_reg[keep]
+        # nms for each class
+        pred_cls_set = list(pred_cls_i.unique().cpu().numpy())
+        _pred_cls_i, _pred_cls_p, _pred_reg = [], [], []
+        for cls_id in pred_cls_set:
+            m = pred_cls_i == cls_id
+            pred_cls_i_id = pred_cls_i[m]
+            pred_cls_p_id = pred_cls_p[m]
+            pred_reg_id = pred_reg[m]
+            keep = box_nms(pred_reg_id, pred_cls_p_id, self.cfg[self.mode]['NMS_IOU'])
+            _pred_cls_i.append(pred_cls_i_id[keep])
+            _pred_cls_p.append(pred_cls_p_id[keep])
+            _pred_reg.append(pred_reg_id[keep])
+        return torch.cat(_pred_cls_i, dim=0), \
+                    torch.cat(_pred_cls_p, dim=0), \
+                        torch.cat(_pred_reg, dim=0)
