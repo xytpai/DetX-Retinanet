@@ -9,12 +9,18 @@ import random
 warnings.filterwarnings("ignore")
 
 
-def filter_annotation(anno, class_id_set):
+def filter_annotation(anno, class_id_set, height, width, hw_th=1, area_th=1):
     anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
-    anno = [obj for obj in anno if obj['area'] > 0]
-    anno = [obj for obj in anno if all(o > 3 for o in obj['bbox'][2:])]
+    anno = [obj for obj in anno if obj['area'] >= area_th]
+    anno = [obj for obj in anno if all(o >= hw_th for o in obj['bbox'][2:])]
     anno = [obj for obj in anno if obj['category_id'] in class_id_set]
-    return anno
+    _anno = []
+    for obj in anno:
+        xmin, ymin, w, h = obj['bbox']
+        inter_w = max(0, min(xmin + w, width) - max(xmin, 0))
+        inter_h = max(0, min(ymin + h, height) - max(ymin, 0))
+        if inter_w * inter_h > 0: _anno.append(obj)
+    return _anno
 
 
 def x_flip(img, boxes=None, masks=None):

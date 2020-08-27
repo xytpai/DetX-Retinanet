@@ -52,10 +52,11 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         ids = []
         for img_id in self.ids:
             img_info = self.coco.loadImgs(img_id)[0]
-            if min(img_info['width'], img_info['height']) < 32: continue
+            height, width = img_info['height'], img_info['width']
+            if min(height, width) < 32: continue
             ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
             anno = self.coco.loadAnns(ann_ids)
-            if len(filter_annotation(anno, self.coco_to_index))>0:
+            if len(filter_annotation(anno, self.coco_to_index, height, width))>0:
                 ids.append(img_id)
         self.ids = ids
         
@@ -72,7 +73,7 @@ class Dataset(torchvision.datasets.coco.CocoDetection):
         masks:    F(n, size, size) 0 or 1
         '''
         img, anno = super(Dataset, self).__getitem__(idx)
-        anno = filter_annotation(anno, self.coco_to_index)
+        anno = filter_annotation(anno, self.coco_to_index, img.size[1], img.size[0])
         boxes = [obj['bbox'] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         xmin_ymin, w_h = boxes.split([2, 2], dim=1)
