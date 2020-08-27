@@ -10,6 +10,7 @@ warnings.filterwarnings("ignore")
 
 
 def filter_annotation(anno, class_id_set, height, width, hw_th=1, area_th=1):
+    anno = [obj for obj in anno if not obj.get('ignore', False)]
     anno = [obj for obj in anno if obj['iscrowd'] == 0] # filter crowd annotations
     anno = [obj for obj in anno if obj['area'] >= area_th]
     anno = [obj for obj in anno if all(o >= hw_th for o in obj['bbox'][2:])]
