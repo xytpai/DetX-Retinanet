@@ -74,13 +74,16 @@ class Detector(nn.Module):
             label_cls_b = label_cls_b[m]
             label_reg_b = label_reg_b[m]
             # get loss
-            iou = box_iou(pred_acr[b], label_reg_b)
-            iou_max, iou_max_idx = torch.max(iou, dim=1) # F(an), L(an)
-            # _iou_max_idx = torch.argmax(iou, dim=0) # F(n), L(n)
+            iou = box_iou(label_reg_b, pred_acr[b]) # F(n, an)
+            iou_max, iou_max_idx = iou.max(dim=0) # F(an), L(an)
+            highest_quality_foreach_gt, _ = iou.max(dim=1) # F(n)
             m_neg = iou_max <  self.iou_th[0] # B(an)
-            # m_neg[_iou_max_idx] = 0
             m_pos = iou_max >= self.iou_th[1] # B(an)
-            # m_pos[_iou_max_idx] = 1
+            gt_pred_pairs_of_highest_quality = torch.nonzero(
+                iou == highest_quality_foreach_gt[:, None])
+            pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
+            m_neg[pred_inds_to_update] = 0
+            m_pos[pred_inds_to_update] = 1
             num_pos = float(m_pos.sum().clamp(min=1))
             m_negpos = m_neg | m_pos # B(an)
             pred_cls_selected = pred_cls[b][m_negpos] # F(n+-, num_class)

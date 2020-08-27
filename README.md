@@ -7,7 +7,7 @@ https://arxiv.org/abs/1708.02002
 #### Usage
 
 ```txt
-1. Install
+1. Install (PyTorch >= 1.0.0)
 sh install.sh
 
 2. Training COCO 1x
