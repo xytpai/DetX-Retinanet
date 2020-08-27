@@ -149,10 +149,10 @@ class Detector(nn.Module):
         pred_reg[:, :2].clamp_(min=0)
         pred_reg = pred_reg/float(locations[4])
         # nms for each class
-        pred_cls_set = list(pred_cls_i.unique().cpu().numpy())
         _pred_cls_i, _pred_cls_p, _pred_reg = [], [], []
-        for cls_id in pred_cls_set:
+        for cls_id in range(1, self.num_class+1):
             m = pred_cls_i == cls_id
+            if int(m.sum()) == 0: continue
             pred_cls_i_id = pred_cls_i[m]
             pred_cls_p_id = pred_cls_p[m]
             pred_reg_id = pred_reg[m]
