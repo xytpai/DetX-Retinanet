@@ -50,7 +50,7 @@ class Detector(nn.Module):
         pred_cls, pred_reg, pred_acr = [], [], []
         for s, feature in enumerate(out):
             h_s, w_s = feature.shape[2], feature.shape[3]
-            cls_s, reg_s, acr_s = self.head(feature)
+            cls_s, reg_s, acr_s = self.head(feature, im_h, im_w, self.anchors)
             # F(b, an, 4)
             pred_cls.append(cls_s)
             pred_reg.append(reg_s)
