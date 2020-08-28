@@ -1,4 +1,4 @@
-### DetX-RetinaNet
+### DetX-Retinanet
 
 Implementation of RetinaNet in PyTorch. <br>
 Focal Loss for Dense Object Detection. <br>
